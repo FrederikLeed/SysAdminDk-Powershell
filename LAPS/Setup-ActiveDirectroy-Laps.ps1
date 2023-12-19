@@ -53,7 +53,7 @@
 [CmdletBinding()]
 Param(
   [Parameter(ValueFromPipelineByPropertyName=$true,Position=0)][string]$GPOPrefix = "LAPS",
-  [Parameter(ValueFromPipelineByPropertyName=$true)][string]$LAPSFiles = $PSScriptRoot
+  [Parameter(ValueFromPipelineByPropertyName=$true)][string]$LAPSFiles = "C:\Scripts\LAPS\MSI"
 )
 
 
@@ -266,14 +266,18 @@ if (!($LegacyLAPS)) {
 # --------------------------------------------------------------------------------
 # Load Legacy LAPS powershell module.
 # --------------------------------------------------------------------------------
-If ( ($LegacyLAPS) -AND (Test-Path -Path "$(($env:PSModulePath -split(";"))[-1])\admpwd.ps\AdmPwd.PS.dll") ) {
-    Import-Module "$(($env:PSModulePath -split(";"))[-1])\admpwd.ps\AdmPwd.PS.dll"
+$PSModulePath = $env:PSModulePath.Split(";") | Where-Object{$_ -match "system32"}
+
+$LapsModule = ($PSModulePath + "\admpwd.ps\AdmPwd.PS.dll")
+
+If ( ($LegacyLAPS) -AND (Test-Path -Path $LapsModule) ) {
+    Import-Module $LapsModule
 } else {
     Write-Verbose "Main : Legacy Laps is installed, missing the Powershell Module (Update Install)"
     Start-Process -FilePath "C:\Windows\System32\MsiExec.exe" -ArgumentList "/i {97E2CA7B-B657-4FF7-A6DB-30ECC73E1E28} ADDLOCAL=Management.PS /quiet" -Wait
 
-    if (Test-Path -Path "$(($env:PSModulePath -split(";"))[-1])\admpwd.ps\AdmPwd.PS.dll") {
-        Import-Module "$(($env:PSModulePath -split(";"))[-1])\admpwd.ps\AdmPwd.PS.dll" -Force
+    if (Test-Path -Path $LapsModule) {
+        Import-Module $LapsModule -Force
     } else {
         Throw "Failed to install Legacy LAPS powershell module, unable to continue"
     }
